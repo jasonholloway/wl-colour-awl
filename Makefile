@@ -1,11 +1,13 @@
 CC = gcc -Wall -g -O0 -std=gnu99
 
-build/ctm: ctm.c
+build/wlcolourawl: wlcolourawl.c
 	mkdir -p build
-	$(CC) -o $@ ctm.c
+	$(CC) -o $@ wlcolourawl.c
 
-.PHONY: clean
+buildRun: build/wlcolourawl
+	build/wlcolourawl; xxd -c8 dump
 
 clean:
 	rm -rf build
 
+.PHONY: clean
