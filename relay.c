@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L                 
+#define _GNU_SOURCE
 #include <errno.h>                              
 #include <stdio.h>                              
 #include <stdlib.h>                             
@@ -13,59 +14,23 @@
 struct output {
 	struct wl_output *wl_output;
 	struct zwlr_ctm_control_v1 *control;
-	int ctm_fd;
 	struct wl_list link;
 };
 
 static struct wl_list outputs;
 static struct zwlr_ctm_manager_v1 *manager = NULL;
 
-static int write_file(off_t size, unsigned char *data) {
-	char template[] = "/tmp/wlroots-shared-XXXXXX";
-	int fd = mkstemp(template);
+static int write_file(off_t size, void *data) {
+  int fd = memfd_create("relay", 0);
 	if (fd < 0) {
 		return -1;
 	}
 
-  fwrite(data, sizeof(unsigned char), size, fd);
-
-	int ret;
-	do {
-		errno = 0;
-		ret = ftruncate(fd, size);
-	} while (errno == EINTR);
-	if (ret < 0) {
+  int c = write(fd, data, size);
+  if(c < size) {
 		close(fd);
-		return -1;
-	}
-
-	unlink(template);
-	return fd;
-}
-
-
-static int output_prepare(struct output *o, const double saturation) {
-	int size = 18 * sizeof(uint32_t);
-
-	int fd = create_anonymous_file(size);
-	if (fd < 0) {
-		fprintf(stderr, "failed to create anonymous file\n");
-		return -1;
-	}
-
-	void *data = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-
-	if (data == MAP_FAILED) {
-		fprintf(stderr, "failed to mmap()\n");
-		close(fd);
-		return -1;
-	}
-
-	o->ctm = data;
-	o->ctm_fd = fd;
-
-	fill_coeffs(o, saturation);
-	fill_ctm(o);
+    return -1;
+  }
 
 	return fd;
 }
@@ -133,23 +98,14 @@ int relayCtm(const char *displayName, int64_t *ctm) {
 	}
 	wl_display_roundtrip(display);
 
-  int fd = write_file(sizeof(int64_t) * 9);
+  int fd = write_file(sizeof(int64_t) * 9, ctm);
   if(fd < 0) {
     printf("error creating file");
     return 1;
   }
 
-  //write ctm to file here
-  //...
-  
-
 	wl_list_for_each(output, &outputs, link) {
-
-		if(output_prepare(output, 2) < 0) {
-			exit(EXIT_FAILURE);
-		}
-
-		zwlr_ctm_control_v1_set_ctm(output->control, output->ctm_fd);
+		zwlr_ctm_control_v1_set_ctm(output->control, fd);
 	}
 
 	fprintf(stderr, "Dispatching...\n");
