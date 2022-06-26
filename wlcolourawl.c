@@ -1,16 +1,8 @@
 #define _POSIX_C_SOURCE 200809L                 
-#include <errno.h>                              
 #include <stdio.h>                              
-#include <stdlib.h>                             
-#include <string.h>                             
-#include <sys/mman.h>                           
-#include <sys/types.h>                          
-#include <unistd.h>                             
-#include <wayland-client-protocol.h>            
-#include <wayland-client.h>                     
-#include "build/wlr-ctm-unstable-v1-client-protocol.h"
-
+#include <math.h>
 #include <stdint.h>
+#include "relay.h"
 
 int readCoeffs(FILE *stream, double *coeffs) {
   for(int i=0; i<9; i++) {
@@ -54,12 +46,10 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  printf("hullo %le %le %le\n", coeffs[0], coeffs[1], coeffs[2]);
-
-  FILE *dump = fopen("dump", "w");
-  fwrite(ctm, sizeof(int64_t), 9, dump);
-  fflush(dump);
-  fclose(dump);
+  if(relayCtm("wayland-0", ctm)) {
+    printf("error relaying to compositor\n");
+    return 1;
+  }
   
   return 0;
 }
