@@ -1,5 +1,16 @@
+#define _POSIX_C_SOURCE 200809L                 
+#include <errno.h>                              
+#include <stdio.h>                              
+#include <stdlib.h>                             
+#include <string.h>                             
+#include <sys/mman.h>                           
+#include <sys/types.h>                          
+#include <unistd.h>                             
+#include <wayland-client-protocol.h>            
+#include <wayland-client.h>                     
+#include "wlr-ctm-unstable-v1-client-protocol.h"
+
 #include <stdint.h>
-#include <stdio.h>
 
 int readCoeffs(FILE *stream, double *coeffs) {
   for(int i=0; i<9; i++) {

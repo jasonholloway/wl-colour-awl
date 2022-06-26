@@ -9,9 +9,9 @@ build: build/wlcolourawl
 
 build/wlcolourawl: $(localSources) $(protoSources)
 	mkdir -p build
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ -lwayland-client
 
-%-client-protocol.c: wlroots/protocol/%.xml
+%-client-protocol.c: wlroots/protocol/%.xml %-client-protocol.h
 	wayland-scanner private-code $< $@
 
 %-client-protocol.h: wlroots/protocol/%.xml
