@@ -8,7 +8,7 @@
 #include <unistd.h>                             
 #include <wayland-client-protocol.h>            
 #include <wayland-client.h>                     
-#include "wlr-ctm-unstable-v1-client-protocol.h"
+#include "build/wlr-ctm-unstable-v1-client-protocol.h"
 
 #include <stdint.h>
 
@@ -23,12 +23,9 @@ int readCoeffs(FILE *stream, double *coeffs) {
 int convertCtm(double *coeffs, int64_t* ctm) {
   for (int i = 0; i < 9; i++) {                                        
     double a = coeffs[i];
-    int64_t b = (int64_t) (a * ((uint64_t) 1L << 32u));   
 
-    if (a < 0) {                                            
-      b = -b;
-      b |= 1ULL << 63u;                                        
-    }
+    int64_t b = (int64_t) (fabs(a) * ((uint64_t) 1L << 32u));   
+    if (a < 0) b |= 1ULL << 63u;                                        
 
     ctm[i] = b;
   }                                                                    
